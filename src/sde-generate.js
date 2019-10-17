@@ -10,6 +10,7 @@ const {
   canonicalName,
   modelPathProps,
   buildDir,
+  wasmDir,
   webDir,
   linkCSourceFiles,
   filesExcept,
@@ -38,6 +39,10 @@ let builder = {
     describe: 'generate an HTML UI for the model',
     type: 'boolean'
   },
+  genwasm: {
+    describe: 'generate a WASM file using a modularized js loader',
+    type: 'boolean'
+  },  
   list: {
     describe: 'list model variables',
     type: 'boolean',
@@ -80,13 +85,19 @@ let generate = async (model, opts) => {
   let buildDirname = buildDir(opts.builddir, modelDirname)
   // The web directory is only used for the --genhtml option.
   let webDirname = ''
+  // Then wasm directory is only used fir the --genwasm option
+  let wasmDirname = ''
   // Generate a spec file from the config files for web apps.
   // This overrides the --spec argument if present.
   if (opts.genhtml) {
     webDirname = webDir(buildDirname)
     initConfig(modelDirname, webDirname)
     opts.spec = makeModelSpec()
+  }else
+  if (opts.genwasm) {
+    wasmDirname = wasmDir(buildDirname)
   }
+  
   // Preprocess model text into parser input. Stop now if that's all we're doing.
   let spec = parseSpec(opts.spec)
   // Read time series from external DAT files into a single object.
@@ -129,7 +140,7 @@ let generate = async (model, opts) => {
   // Parse the model and generate code. If no operation is specified, the code generator will
   // read the model and do nothing else. This is required for the list operation.
   let operation = ''
-  if (opts.genc || opts.genhtml) {
+  if (opts.genc || opts.genhtml || opts.genwasm) {
     operation = 'generateC'
   } else if (opts.list) {
     operation = 'printVarList'
@@ -162,18 +173,29 @@ let generate = async (model, opts) => {
     writeOutput(outputPathname, outputText)
   }
   // Generate a web app for the model.
-  if (opts.genhtml) {
+  if (opts.genhtml || opts.genwasm) {
     linkCSourceFiles(modelDirname, buildDirname)
-    if (generateWASM(buildDirname, webDirname) === 0) {
+
+    if ( opts.genhtml && generateWASM(buildDirname, webDirname, 'model_sde.js') === 0) {
       makeModelConfig()
       await makeChartData()
       copyTemplate(buildDirname)
       customizeApp(modelDirname, webDirname)
       packApp(webDirname)
+    }else
+    if( opts.genwasm && generateWASM(buildDirname, wasmDirname, `${modelName}_module.js`, true) === 0 ){
+      let outputPathname, outputText
+      outputPathname = path.join(wasmDirname, `${modelName}_vars.json`)
+      outputText = Model.jsonVarList()
+      writeOutput(outputPathname, outputText)   
+      outputPathname = path.join(wasmDirname, `${modelName}_subs.json`)
+      outputText = Subscript.jsonSubsList()   
+      writeOutput(outputPathname, outputText)             
     }
+
   }
 }
-let generateWASM = (buildDirname, webDirname) => {
+let generateWASM = (buildDirname, webDirname, jsFilename, modularize=false) => {
   // Generate WASM from C source files in the build directory.
   let args = filesExcept(`${buildDirname}/*.c`, name => name.endsWith('main.c'))
   // Include the build directory as a place to look for header files.
@@ -181,7 +203,7 @@ let generateWASM = (buildDirname, webDirname) => {
   // Set the output pathname for the JavaScript wrapper to the web directory.
   // The WASM file will be written to the same directory and basename.
   args.push('-o')
-  args.push(path.join(webDirname, 'model_sde.js'))
+  args.push(path.join(webDirname, jsFilename))
   // Set flags for WASM compilation and optimization.
   // Use -O0 optimization in development to get readable model_sde.js wrapper source.
   // Use -Oz optimization for productions runs.
@@ -200,6 +222,10 @@ let generateWASM = (buildDirname, webDirname) => {
   args.push('-s MALLOC=emmalloc')
   // Run the Closure compiler to minimize JS glue code.
   args.push('--closure 1')
+  // Modularize for --genwasm option
+  if( modularize ){
+    args.push( '-s MODULARIZE=1');
+  }
   // Run the emcc command to generate WASM code.
   let cmd = `emcc ${args.join(' ')}`
   // console.log(cmd)

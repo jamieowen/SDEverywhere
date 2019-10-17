@@ -195,6 +195,11 @@ let webDir = buildDirname => {
   // Ensure a web directory exists under the build directory.
   return ensureDir(null, 'web', buildDirname)
 }
+let wasmDir = buildDirname =>{
+  // Ensure a wasm directory exists under the build directory.
+  return ensureDir(null, 'wasm', buildDirname)
+}
+
 let ensureDir = (dir, defaultDir, modelDirname) => {
   // Ensure the directory exists as given or under the model directory.
   let dirName = dir || path.join(modelDirname, defaultDir)
@@ -437,5 +442,6 @@ module.exports = {
   strToConst,
   vlog,
   vsort,
-  webDir
+  wasmDir,
+  webDir  
 }

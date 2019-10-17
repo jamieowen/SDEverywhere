@@ -642,6 +642,11 @@ function yamlVarList() {
   let vars = R.sortBy(R.prop('refId'), R.map(v => filterVar(v), variables))
   return yaml.safeDump(vars)
 }
+function jsonVarList() {
+  // Print selected properties of all variable objects to a JSON string.
+  let vars = R.sortBy(R.prop('refId'), R.map(v => filterVar(v), variables))
+  return JSON.stringify(vars,null,4)
+}
 function loadVariablesFromYaml(yamlVars) {
   variables = yaml.safeLoad(yamlVars)
 }
@@ -771,6 +776,7 @@ module.exports = {
   filterVar,
   initVars,
   isNonAtoAName,
+  jsonVarList,
   levelVars,
   loadVariablesFromYaml,
   lookupVars,

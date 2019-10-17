@@ -170,6 +170,13 @@ function yamlSubsList() {
   }
   return yaml.safeDump(subs)
 }
+function jsonSubsList() {
+  let subs = {}
+  for (let [k, v] of subscripts) {
+    subs[k] = v
+  }
+  return JSON.stringify(subs,null,4)
+}
 function loadSubscriptsFromYaml(yamlSubs) {
   // Load the subscripts map from subscripts serialized to a YAML file by yamlSubsList.
   // This function should be called instead of adding subscripts through the constructor.
@@ -329,6 +336,7 @@ module.exports = {
   indexNamesForSubscript,
   isDimension,
   isIndex,
+  jsonSubsList,
   loadSubscriptsFromYaml,
   mapIndex,
   normalizeSubscripts,

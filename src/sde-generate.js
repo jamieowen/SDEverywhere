@@ -186,7 +186,7 @@ let generate = async (model, opts) => {
     if( opts.genwasm && generateWASM(buildDirname, wasmDirname, `${modelName}_module.js`, true) === 0 ){
       let outputPathname, outputText
       outputPathname = path.join(wasmDirname, `${modelName}_vars.json`)
-      outputText = Model.jsonVarList()
+      outputText = Model.jsonOutputVarList()
       writeOutput(outputPathname, outputText)   
       outputPathname = path.join(wasmDirname, `${modelName}_subs.json`)
       outputText = Subscript.jsonSubsList()   
@@ -221,7 +221,7 @@ let generateWASM = (buildDirname, webDirname, jsFilename, modularize=false) => {
   // Use a simpler malloc to reduce code size.
   args.push('-s MALLOC=emmalloc')
   // Run the Closure compiler to minimize JS glue code.
-  args.push('--closure 1')
+  // args.push('--closure 1') // TEMP COMMENT
   // Modularize for --genwasm option
   if( modularize ){
     args.push( '-s MODULARIZE=1');

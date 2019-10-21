@@ -198,7 +198,7 @@ ${outputSection(outputVars)}
     }
     return R.uniq(
       R.reduce(
-        (a, v) => {
+        (a, v) => {          
           if (v.varType !== 'lookup' && v.varType !== 'data' && v.includeInOutput) {
             let modelLHSReader = new ModelLHSReader()
             modelLHSReader.read(v.modelLHS)

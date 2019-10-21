@@ -642,9 +642,12 @@ function yamlVarList() {
   let vars = R.sortBy(R.prop('refId'), R.map(v => filterVar(v), variables))
   return yaml.safeDump(vars)
 }
-function jsonVarList() {
-  // Print selected properties of all variable objects to a JSON string.
-  let vars = R.sortBy(R.prop('refId'), R.map(v => filterVar(v), variables))
+function jsonOutputVarList() {
+  // Modified json outputVar list to include outputVars only - using filtering from the CodeGen.js
+  let includeVar = (v)=>{
+    return v.varType !== 'lookup' && v.varType !== 'data' && v.includeInOutput;
+  }
+  let vars = R.sortBy(R.prop('refId'), R.filter(includeVar,variables).map(v => filterVar(v), variables))
   return JSON.stringify(vars,null,4)
 }
 function loadVariablesFromYaml(yamlVars) {
@@ -776,7 +779,7 @@ module.exports = {
   filterVar,
   initVars,
   isNonAtoAName,
-  jsonVarList,
+  jsonOutputVarList,
   levelVars,
   loadVariablesFromYaml,
   lookupVars,
